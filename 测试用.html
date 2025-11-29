@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级转盘游戏</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* 头部样式 */
+        .header {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fad0c4, #a1c4fd);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: titleGlow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes titleGlow {
+            0% {
+                text-shadow: 0 0 20px rgba(255, 154, 158, 0.7);
+            }
+            100% {
+                text-shadow: 0 0 30px rgba(161, 196, 253, 0.9);
+            }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .sponsor {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            margin-top: 1rem;
+            padding: 0.5rem 1.5rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 30px;
+            display: inline-block;
+        }
+
+        /* 主内容区域 */
+        .content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 3rem;
+            margin-top: 2rem;
+        }
+
+        /* 转盘区域 */
+        .wheel-section {
+            flex: 1;
+            min-width: 400px;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .wheel {
+            width: 100%;
+            height: 0;
+            padding-bottom: 100%;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: 
+                0 0 0 15px rgba(255, 255, 255, 0.1),
+                0 0 40px rgba(0, 0, 0, 0.3),
+                inset 0 0 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            background: #1e1e2f;
+        }
+
+        .wheel-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            border-radius: 50%;
+            z-index: 20;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            border: 4px solid white;
+        }
+
+        /* 使用conic-gradient创建完美等面积扇形 */
+        .wheel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(
+                #ff6b6b 0deg 72deg,
+                #4cd964 72deg 144deg,
+                #5ac8fa 144deg 216deg,
+                #ffa726 216deg 288deg,
+                #5856d6 288deg 360deg
+            );
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        /* 指针 */
+        .pointer {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-bottom: 40px solid #ff3b30;
+            z-index: 30;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+        }
+
+        .pointer::after {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: -12px;
+            width: 24px;
+            height: 24px;
+            background: #ff3b30;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 59, 48, 0.7);
+        }
+
+        /* 底座 */
+        .wheel-base {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 40px;
+            background: linear-gradient(to bottom, #666, #444);
+            border-radius: 15px 15px 8px 8px;
+            z-index: -1;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+        }
+
+        /* 控制区域 */
+        .control-section {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        /* 开始按钮 */
+        .spin-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            color: white;
+            border: none;
+            padding: 1.2rem 3rem;
+            border-radius: 50px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.5);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .spin-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: 0.5s;
+            z-index: -1;
+        }
+
+        .spin-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(255, 107, 107, 0.7);
+        }
+
+        .spin-btn:hover::before {
+            left: 100%;
+        }
+
+        .spin-btn:disabled {
+            background: linear-gradient(135deg, #888, #666);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        /* 结果区域 */
+        .result {
+            font-size: 1.5rem;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            padding: 1.2rem 2rem;
+            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            min-width: 300px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .result.highlight {
+            background: linear-gradient(135deg, rgba(255, 236, 179, 0.8), rgba(255, 213, 79, 0.8));
+            color: #e65100;
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(230, 81, 0, 0.4);
+        }
+
+        /* 图例区域 */
+        .legend {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .legend-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            padding: 0.5rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .legend-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(5px);
+        }
+
+        .color-box {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            margin-right: 1rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .legend-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* 统计区域 */
+        .stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 15px;
+            min-width: 120px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffd700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* 装饰元素 */
+        .decorations {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .decoration {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.7;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .decoration:nth-child(1) { top: 10%; left: 5%; animation-delay: 0s; }
+        .decoration:nth-child(2) { top: 15%; right: 8%; animation-delay: 1s; }
+        .decoration:nth-child(3) { bottom: 20%; left: 7%; animation-delay: 2s; }
+        .decoration:nth-child(4) { bottom: 15%; right: 6%; animation-delay: 3s; }
+        .decoration:nth-child(5) { top: 40%; left: 3%; animation-delay: 4s; }
+        .decoration:nth-child(6) { top: 35%; right: 4%; animation-delay: 5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-25px) rotate(15deg); }
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 900px) {
+            .content {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .title {
+                font-size: 2.5rem;
+            }
+            
+            .wheel-section, .control-section {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="decorations">
+        <div class="decoration">🎯</div>
+        <div class="decoration">🎁</div>
+        <div class="decoration">✨</div>
+        <div class="decoration">⭐</div>
+        <div class="decoration">🎉</div>
+        <div class="decoration">🏆</div>
+    </div>
+    
+    <div class="container">
+        <div class="header">
+            <h1 class="title">不转的是GAY</h1>
+            <p class="subtitle">不🦌的是GAY！</p>
+            <div class="sponsor">本游戏由星穹铁道一家人独家冠名</div>
+        </div>
+        
+        <div class="content">
+            <div class="wheel-section">
+                <div class="wheel-container">
+                    <div class="wheel" id="wheel">
+                        <!-- 使用conic-gradient创建扇形，无需单独的扇形元素 -->
+                        <div class="wheel-center">GO!</div>
+                    </div>
+                    <div class="pointer"></div>
+                    <div class="wheel-base"></div>
+                </div>
+                
+                <!-- 图例区域 -->
+                <div class="legend">
+                    <h3 class="legend-title">选项说明</h3>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #ff6b6b;"></div>
+                        <div class="legend-text">今天不准🦌</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #4cd964;"></div>
+                        <div class="legend-text">今天🦌一次</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #5ac8fa;"></div>
+                        <div class="legend-text">今天🦌两次</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #ffa726;"></div>
+                        <div class="legend-text">今天帮人🦌</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="color-box" style="background: #5856d6;"></div>
+                        <div class="legend-text">今天随便🦌</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-section">
+                <button class="spin-btn" id="spinBtn">
+                    <i class="fas fa-play"></i> 开始转盘
+                </button>
+                
+                <div class="result" id="result">等待开始...</div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="spinCount">0</div>
+                        <div class="stat-label">总旋转次数</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="lastResult">-</div>
+                        <div class="stat-label">上次结果</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const wheel = document.getElementById('wheel');
+        const spinBtn = document.getElementById('spinBtn');
+        const result = document.getElementById('result');
+        const spinCount = document.getElementById('spinCount');
+        const lastResult = document.getElementById('lastResult');
+        
+        let isSpinning = false;
+        let spinCounter = 0;
+        let lastResultText = '-';
+
+        // 5个选项对应的角度范围（每个扇区72度）
+        const segments = [
+            { min: 324, max: 36, text: '今天不准🦌', color: '#ff6b6b' },
+            { min: 36, max: 108, text: '今天🦌一次', color: '#4cd964' },
+            { min: 108, max: 180, text: '今天🦌两次', color: '#5ac8fa' },
+            { min: 180, max: 252, text: '今天帮人🦌', color: '#ffa726' },
+            { min: 252, max: 324, text: '今天随便🦌', color: '#5856d6' }
+        ];
+
+        spinBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            
+            isSpinning = true;
+            spinBtn.disabled = true;
+            result.textContent = '转盘中...';
+            result.classList.remove('highlight');
+            
+            // 重置转盘位置，确保每次旋转都从相同位置开始
+            wheel.style.transition = 'none';
+            wheel.style.transform = `rotate(0deg)`;
+            
+            // 强制重绘
+            void wheel.offsetWidth;
+            
+            // 重新启用过渡
+            wheel.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.21, 0.99)';
+            
+            // 随机生成旋转角度（至少3圈 + 随机角度）
+            const minRotation = 1080; // 至少3圈
+            const extraRotation = Math.floor(Math.random() * 720) + 360; // 额外1-3圈
+            const randomDegrees = minRotation + extraRotation;
+            
+            // 应用旋转
+            wheel.style.transform = `rotate(${randomDegrees}deg)`;
+
+            // 旋转结束后获取结果
+            setTimeout(() => {
+                const actualDegrees = randomDegrees % 360;
+                const selectedSegment = segments.find(seg => {
+                    if (seg.min < seg.max) {
+                        return actualDegrees >= seg.min && actualDegrees < seg.max;
+                    } else {
+                        return actualDegrees >= seg.min || actualDegrees < seg.max;
+                    }
+                });
+                
+                // 更新结果和统计
+                result.textContent = `恭喜！选中了：${selectedSegment.text}`;
+                result.classList.add('highlight');
+                
+                spinCounter++;
+                spinCount.textContent = spinCounter;
+                lastResult.textContent = selectedSegment.text;
+                
+                isSpinning = false;
+                spinBtn.disabled = false;
+            }, 4000);
+        });
+    </script>
+</body>
+</html>
